@@ -1,0 +1,91 @@
+#include <GL/glut.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include <cmath>
+#include <cstdlib>
+#include <ctime>
+
+// 전역 변수 선언
+GLfloat Delta = 0.0; // 움직임 변화
+GLfloat dx = 0.01; // x축 이동 속도
+GLfloat dy = 0.01; // y축 이동 속도
+GLfloat radius = 0.2; // 초기 당구공 반지름
+GLfloat ballX = 0.0; // 당구공의 초기 x 좌표 (화면 중앙)
+GLfloat ballY = 0.0; // 당구공의 초기 y 좌표 (화면 중앙)
+GLfloat ballSpeed = 0.02; // 당구공의 초기 속도
+
+// 초기 랜덤 진행방향 설정
+void init() {
+    srand(time(0));
+    GLfloat angle = (GLfloat)(rand() % 360) * 3.14f / 180.0;
+    dx = cos(angle) * ballSpeed;
+    dy = sin(angle) * ballSpeed;
+}
+
+// 당구공을 그리는 함수
+void DrawCircle(float cx, float cy, float r)
+{
+    float x1, y1, x2, y2;
+    float angle;
+
+    x1 = cx, y1 = cy;
+    glColor3f(1.0, 0.0, 0.0);
+
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex2f(x1, y1); // center, z=0
+    for (angle = 0.01f; angle <= 2 * 3.14f + 0.2; angle += 0.2)
+    {
+        x2 = x1 - sin(angle) * r;
+        y2 = y1 + cos(angle) * r;
+        glVertex2f(x2, y2);
+    }
+    glEnd();
+}
+
+void MyDisplay() {
+    glClear(GL_COLOR_BUFFER_BIT); //명령어 해석=프레임 버퍼의 내용을 지움(색상정보를 지움)
+    DrawCircle(ballX, ballY, radius);
+    glutSwapBuffers(); //명령어 해석=후면버퍼에 있는 그림 전면 버퍼로 이동하여 화면에 나타남
+}
+
+// 프로그램 중단 함수
+void MyTimer(int Value) {
+    // 당구공 위치 업데이트
+    ballX += dx;
+    ballY += dy;
+
+    // 당구공이 화면 경계에 닿았는지 확인하고 반사
+    //윈도우 좌표계의 오른쪽(상단) 가장자리가 1,왼쪽(하단) 가장자리가 -1
+    if (ballX + radius >= 1.0 || ballX - radius <= -1.0)
+        dx = -dx; //오른쪽 , 왼쪽 경계에 닿음
+    if (ballY + radius >= 1.0 || ballY - radius <= -1.0)
+        dy = -dy; //상단 , 하단 경계에 닿음
+
+    // 당구공의 크기를 줄임
+    radius -= 0.0005;
+
+    // 당구공의 크기가 충분히 작아지면 프로그램 종료
+    if (radius <= 0.05)
+        exit(0);
+
+    glutPostRedisplay();//명령어 해석=화면업데이트
+    glutTimerFunc(40, MyTimer, 1); // 40밀리초 이후 재호출 변수1은 의미없음
+}
+
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE); // 명령어 해석=윈도우 디스플레이 모드 설정(색상모드 사용|화면 부드럽게)
+    glutInitWindowSize(300, 300); //생성된 윈도우 크기
+    glutInitWindowPosition(100, 0);//생성된 윈도우 위차
+    glutCreateWindow("OpenL Drawing Example");
+
+    // 윈도우 창의 배경색을 초록색으로 설정
+    glClearColor(0.0, 1.0, 0.0, 0.0);
+
+    init();
+
+    glutDisplayFunc(MyDisplay);
+    glutTimerFunc(40, MyTimer, 1); // 40밀리초 이후 실행
+    glutMainLoop();
+    return 0;
+}
